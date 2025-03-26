@@ -18,6 +18,7 @@ const Cart = () => {
   const [shippingStreet, setShippingStreet] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("card"); // Alapértelmezett: kártyás fizetés
   const [isFormValid, setIsFormValid] = useState(false);
+  const [guestEmail, setGuestEmail] = useState("");
 
   // Frissítés ha a felhasználó bejelentkezik
   useEffect(() => {
@@ -55,21 +56,21 @@ const Cart = () => {
           shippingCity.trim() !== "" &&
           shippingStreet.trim() !== ""
         : true);
+  
     setIsFormValid(isValid);
   }, [name, billingZip, billingCity, billingStreet, sameAsBilling, shippingZip, shippingCity, shippingStreet, cart, paymentMethod]);
-
   // Rendelés elküldése
   const handleOrder = async () => {
     const token = localStorage.getItem("token");
 
-    if (!token) {
-      alert("Be kell jelentkezni a rendeléshez!");
+    if (!token && !guestEmail.trim()) {
+      alert("Vendégként kérjük, adjon meg egy email címet!");
       return;
     }
 
     const orderData = {
       user_id: user ? user.id : null,
-      guest_email: user ? null : "guest@example.com",
+      guest_email: user ? null : guestEmail.trim(),
       total,
       billing: { 
         zip: (billingZip || "").trim(), 
@@ -96,7 +97,7 @@ const Cart = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer, ${token}`,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify(orderData),
       });
@@ -169,7 +170,17 @@ const Cart = () => {
               Készpénzes fizetés
             </label>
           </div>
-
+          {!user && (
+          <div className="form-section">
+            <h2>Kapcsolattartó Email</h2>
+            <input
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="Email cím"
+            />
+          </div>
+        )}
           <button className="order-button" onClick={handleOrder} disabled={!isFormValid}>
             Megrendelés
           </button>

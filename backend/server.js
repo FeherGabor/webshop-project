@@ -130,14 +130,27 @@ app.get("/products", (req, res) => {
 
 // Képek kiszolgálása
 app.use("/images", express.static(path.join(__dirname, "public", "images")));
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
+  if (!token) return next();
+
+  jwt.verify(token, "secret", (err, user) => {
+    if (!err) {
+      req.user = user;
+    }
+    next(); // akár hibás, akár nem, továbbmegyünk
+  });
+};
 // Rendelés létrehozása (frissítve fizetési móddal)
-app.post("/api/orders", authenticateToken, (req, res) => {
+app.post("/api/orders", optionalAuth, (req, res) => {
   const { total, billing, shipping, cart, payment_method } = req.body;
-  const userId = req.user.id || null;
+  const userId = req.user?.id || null;
+  const guestEmail = req.body.guest_email || null;
 
-  if (!userId) {
-    return res.status(401).json({ message: "Be kell jelentkezni a rendeléshez!" });
+  if (!userId && !guestEmail) {
+    return res.status(400).json({ message: "Bejelentkezés vagy vendég email szükséges!" });
   }
 
   if (!["cash", "card"].includes(payment_method)) {
@@ -153,8 +166,8 @@ app.post("/api/orders", authenticateToken, (req, res) => {
     }
 
     db.query(
-      "INSERT INTO orders (user_id, total, billing_address, shipping_address, payment_method) VALUES (?, ?, ?, ?, ?)",
-      [userId, total, billingAddress, shippingAddress, payment_method],
+      "INSERT INTO orders (user_id, guest_email, total, billing_address, shipping_address, payment_method) VALUES (?, ?, ?, ?, ?, ?)",
+      [userId, guestEmail, total, billingAddress, shippingAddress, payment_method],
       (err, result) => {
         if (err) {
           return db.rollback(() => {
