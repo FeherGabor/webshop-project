@@ -1,0 +1,70 @@
+import React, { useEffect, useState, useContext } from "react";
+import AuthContext from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import "../styles/OrdersPage.css";
+
+const OrdersPage = () => {
+  const { user, authToken } = useContext(AuthContext);
+  const [orders, setOrders] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login"); // Ha nincs bejelentkezve, irányítsuk át
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/orders", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error(`Hiba: ${response.status}`);
+        }
+    
+        const data = await response.json();
+        setOrders(data);
+      } catch (error) {
+        console.error("Hiba a rendelések lekérésekor:", error);
+      }
+    };
+
+    fetchOrders();
+  }, [user, authToken, navigate]);
+
+  return (
+    <div className="orders-page">
+      <h2>Korábbi rendeléseim</h2>
+      {orders.length === 0 ? (
+        <p>Még nincs korábbi rendelésed.</p>
+      ) : (
+        <ul className="orders-list">
+          {orders.map((order) => (
+          <li key={order._id} className="order-item">
+            <p><strong>Rendelés ID:</strong> {order.id}</p>
+            <p><strong>Dátum:</strong> {new Date(order.created_at).toLocaleDateString()}</p>
+            <p><strong>Összeg:</strong> {order.total} Ft</p>
+            <p><strong>Termékek:</strong></p>
+            <ul>
+              {order.items.map((item) => (
+                <li key={item._id}>
+                  <strong>{item.product_name}</strong> - {item.quantity} db ({item.price} Ft/db)
+                </li>
+              ))}
+            </ul>
+            <p><strong>Fizetés módja:</strong> {order.payment_method || "Nincs adat"}</p>
+          </li>
+        ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+export default OrdersPage;

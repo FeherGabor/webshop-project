@@ -1,0 +1,30 @@
+.orders-page {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .orders-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .order-item {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .order-item ul {
+    padding-left: 15px;
+    margin-top: 5px;
+  }
+  
+  .order-item ul li {
+    font-size: 14px;
+    color: #555;
+  }
+  

@@ -1,0 +1,104 @@
+/* Header alapstílusok */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+    position: relative;
+}
+
+/* Logó stílusa */
+.header-logo img {
+    height: 40px;
+}
+
+/* Navigációs linkek */
+.header-links {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Gombok és linkek stílusa */
+.header-links a,
+.header-links button {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.header-links a:hover,
+.header-links button:hover {
+    text-decoration: underline;
+}
+
+/* Kosár ikon */
+.cart-icon {
+    font-size: 20px;
+}
+
+/* Fiók menü */
+.account-menu {
+    position: relative;
+}
+
+/* Lenyníló menü */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    overflow: hidden;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    margin-top: 5px;
+}
+
+/* Lenyníló menü gombok és linkek fekete színnel */
+.dropdown-menu button,
+.dropdown-menu a {
+    color: black;
+    text-decoration: none;
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 14px;
+    border-bottom: 1px solid #ccc;
+    background: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu button:hover {
+    background-color: #f0f0f0;
+}
+
+/* Reszponzivitás */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-links {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .dropdown-menu {
+        width: 100%;
+    }
+}
