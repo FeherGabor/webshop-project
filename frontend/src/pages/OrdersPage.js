@@ -46,10 +46,18 @@ const OrdersPage = () => {
       ) : (
         <ul className="orders-list">
           {orders.map((order) => (
+            console.log("Order (frontend oldalon):", order),           
           <li key={order._id} className="order-item">
             <p><strong>Rendelés ID:</strong> {order.id}</p>
             <p><strong>Dátum:</strong> {new Date(order.created_at).toLocaleDateString()}</p>
             <p><strong>Összeg:</strong> {order.total} Ft</p>
+            <p><strong>Fizetés módja:</strong> {
+              order.payment_method === "card"
+                ? "Kártyás fizetés"
+                : order.payment_method === "cash"
+                ? "Készpénzes fizetés"
+                : "Nincs adat"
+            }</p>
             <p><strong>Termékek:</strong></p>
             <ul>
               {order.items.map((item) => (
@@ -58,7 +66,7 @@ const OrdersPage = () => {
                 </li>
               ))}
             </ul>
-            <p><strong>Fizetés módja:</strong> {order.payment_method || "Nincs adat"}</p>
+            
           </li>
         ))}
         </ul>

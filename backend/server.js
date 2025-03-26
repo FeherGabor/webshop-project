@@ -211,7 +211,7 @@ app.get("/api/orders", authenticateToken, (req, res) => {
   const userId = req.user.id;
 
   db.query(
-    "SELECT id, total, billing_address, shipping_address, created_at FROM orders WHERE user_id = ? ORDER BY created_at DESC",
+    "SELECT id, total, billing_address, shipping_address, created_at, payment_method FROM orders WHERE user_id = ? ORDER BY created_at DESC",
     [userId],
     (err, orders) => {
       if (err) {
@@ -219,11 +219,11 @@ app.get("/api/orders", authenticateToken, (req, res) => {
       }
 
       if (orders.length === 0) {
-        return res.json([]); // Ha nincs rendelés, küldjünk üres listát
+        return res.json([]);
       }
 
-      // Minden rendeléshez lekérjük a hozzá tartozó tételeket
       const orderIds = orders.map(order => order.id);
+
       db.query(
         "SELECT * FROM order_items WHERE order_id IN (?)",
         [orderIds],
@@ -231,13 +231,23 @@ app.get("/api/orders", authenticateToken, (req, res) => {
           if (err) {
             return res.status(500).json({ message: "Hiba a rendelés tételeinek lekérésekor", error: err });
           }
+          const ordersWithItems = orders.map(order => {
+            const cleanOrder = {
+              id: order.id,
+              total: order.total,
+              billing_address: order.billing_address,
+              shipping_address: order.shipping_address,
+              created_at: order.created_at,
+              payment_method: order.payment_method, 
+            };
+          
+            return {
+              ...cleanOrder,
+              items: orderItems.filter(item => item.order_id === order.id),
+            };
+          });
 
-          // A rendeléseket összepárosítjuk a tételekkel
-          const ordersWithItems = orders.map(order => ({
-            ...order,
-            items: orderItems.filter(item => item.order_id === order.id),
-          }));
-
+          console.log("Szerver oldali válasz (ordersWithItems):", ordersWithItems); 
           res.json(ordersWithItems);
         }
       );
