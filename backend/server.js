@@ -246,8 +246,6 @@ app.get("/api/orders", authenticateToken, (req, res) => {
               items: orderItems.filter(item => item.order_id === order.id),
             };
           });
-
-          console.log("Szerver oldali válasz (ordersWithItems):", ordersWithItems); 
           res.json(ordersWithItems);
         }
       );
