@@ -11,10 +11,10 @@ const Account = () => {
     city: "",
     street: "",
   });
-  const [message, setMessage] = useState(""); // Üzenet, hogy mi történt
+  const [passwords, setPasswords] = useState({ oldPassword: "", newPassword: "" });
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Az email és token a localStorage-ból
     const email = localStorage.getItem("email");
     const token = localStorage.getItem("token");
 
@@ -23,23 +23,15 @@ const Account = () => {
       return;
     }
 
-    // Felhasználói adatokat lekérjük a backendtől
-    fetchUserData(email, token);
+    fetchUserData(token);
   }, []);
 
-  const fetchUserData = async () => {
+  const fetchUserData = async (token) => {
     try {
-      const token = localStorage.getItem("token"); // Token lekérése
-      if (!token) {
-        console.error("Nincs token elmentve!");
-        return;
-      }
-  
       const response = await axios.get("http://localhost:5000/users", {
-        headers: { Authorization: `Bearer ${token}` }, // Token használata
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
-      // Betöltjük a formba az adatokat
+
       setForm({
         name: response.data.name,
         email: response.data.email,
@@ -54,39 +46,85 @@ const Account = () => {
     }
   };
 
+  const validatePhone = (phone) => {
+    const phoneRegex = /^(\+36|06)(20|30|70|1)\d{7}$/;
+    return phoneRegex.test(phone.replace(/\s+/g, ""));
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value }); // Form mezők kezelése
+    const { name, value } = e.target;
+    if (name === "phone") {
+      const cleaned = value.replace(/[^0-9+]/g, "");
+      setForm({ ...form, [name]: cleaned });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswords({ ...passwords, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Ne frissítse az oldalt
-    try {
-      const token = localStorage.getItem("token"); // Token lekérése
-      if (!token) {
-        setMessage("Be kell jelentkezni!");
-        return;
-      }
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("Be kell jelentkezni!");
+      return;
+    }
 
+    if (!validatePhone(form.phone)) {
+      setMessage("Hibás telefonszám formátum! (pl. +36201234567 vagy 06201234567)");
+      return;
+    }
+
+    try {
       const response = await axios.put("http://localhost:5000/users", form, {
-        headers: { Authorization: `Bearer ${token}` }, // Token küldése a kéréshez
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setMessage(response.data.message); // Sikeres üzenet a válaszból
+      setMessage(response.data.message);
 
-      // Frissítjük a localStorage-ot a módosított adatokkal
       localStorage.setItem("email", form.email);
-      localStorage.setItem("user", JSON.stringify({
-        email: form.email,
-        name: form.name,
-        phone: form.phone,
-        postcode: form.postcode,
-        city: form.city,
-        street: form.street,
-      }));
-
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          email: form.email,
+          name: form.name,
+          phone: form.phone,
+          postcode: form.postcode,
+          city: form.city,
+          street: form.street,
+        })
+      );
     } catch (error) {
       console.error("Hiba történt a frissítés során!", error);
       setMessage("Hiba történt a frissítés során!");
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("Be kell jelentkezni!");
+      return;
+    }
+
+    if (passwords.newPassword.length < 6) {
+      setMessage("A jelszónak legalább 6 karakter hosszúnak kell lennie!");
+      return;
+    }
+
+    try {
+      const res = await axios.put("http://localhost:5000/users/password", passwords, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMessage(res.data.message);
+      setPasswords({ oldPassword: "", newPassword: "" });
+    } catch (error) {
+      console.error("Hiba a jelszó módosításakor!", error);
+      setMessage(error.response?.data?.message || "Hiba történt a jelszó módosításakor!");
     }
   };
 
@@ -95,61 +133,51 @@ const Account = () => {
       <h2>Adataim módosítása</h2>
       {message && <p className="message">{message}</p>}
       <form onSubmit={handleSubmit} className="account-form">
-        <label>Név:
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
+        <label>
+          Név:
+          <input type="text" name="name" value={form.name} onChange={handleChange} required />
         </label>
-        <label>Email:
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
+        <label>
+          Email:
+          <input type="email" name="email" value={form.email} onChange={handleChange} required />
         </label>
-        <label>Telefonszám:
+        <label>
+          Telefonszám:
           <input
-            type="text"
+            type="tel"
             name="phone"
             value={form.phone}
             onChange={handleChange}
             required
+            placeholder="+36201234567 vagy 06201234567"
           />
         </label>
-        <label>Irányítószám:
-          <input
-            type="text"
-            name="postcode"
-            value={form.postcode}
-            onChange={handleChange}
-            required
-          />
+        <label>
+          Irányítószám:
+          <input type="text" name="postcode" value={form.postcode} onChange={handleChange} required />
         </label>
-        <label>Város:
-          <input
-            type="text"
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-            required
-          />
+        <label>
+          Város:
+          <input type="text" name="city" value={form.city} onChange={handleChange} required />
         </label>
-        <label>Utca, házszám:
-          <input
-            type="text"
-            name="street"
-            value={form.street}
-            onChange={handleChange}
-            required
-          />
+        <label>
+          Utca, házszám:
+          <input type="text" name="street" value={form.street} onChange={handleChange} required />
         </label>
         <button type="submit">Mentés</button>
+      </form>
+
+      <h2>Jelszó módosítása</h2>
+      <form onSubmit={handlePasswordSubmit} className="account-form">
+        <label>
+          Régi jelszó:
+          <input type="password" name="oldPassword" value={passwords.oldPassword} onChange={handlePasswordChange} required />
+        </label>
+        <label>
+          Új jelszó:
+          <input type="password" name="newPassword" value={passwords.newPassword} onChange={handlePasswordChange} required />
+        </label>
+        <button type="submit">Jelszó frissítése</button>
       </form>
     </div>
   );

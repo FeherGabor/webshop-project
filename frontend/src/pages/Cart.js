@@ -7,7 +7,6 @@ const Cart = () => {
   const { user } = useContext(AuthContext);
   const { cart, total, clearCart, updateQuantity, removeFromCart } = useContext(CartContext);
 
-  // Inicializálás
   const [name, setName] = useState(user?.name || "");
   const [billingZip, setBillingZip] = useState(user?.billingZip || "");
   const [billingCity, setBillingCity] = useState(user?.billingCity || "");
@@ -16,11 +15,12 @@ const Cart = () => {
   const [shippingZip, setShippingZip] = useState("");
   const [shippingCity, setShippingCity] = useState("");
   const [shippingStreet, setShippingStreet] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card"); // Alapértelmezett: kártyás fizetés
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [isFormValid, setIsFormValid] = useState(false);
   const [guestEmail, setGuestEmail] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Frissítés ha a felhasználó bejelentkezik
   useEffect(() => {
     if (user) {
       setName(user.name || "");
@@ -30,7 +30,6 @@ const Cart = () => {
     }
   }, [user]);
 
-  // Ha a "Ugyanaz mint a számlázási cím" checkbox be van pipálva
   useEffect(() => {
     if (sameAsBilling) {
       setShippingZip(billingZip);
@@ -43,7 +42,6 @@ const Cart = () => {
     }
   }, [sameAsBilling, billingZip, billingCity, billingStreet]);
 
-  // Form validáció
   useEffect(() => {
     const isValid =
       name.trim() !== "" &&
@@ -56,15 +54,16 @@ const Cart = () => {
           shippingCity.trim() !== "" &&
           shippingStreet.trim() !== ""
         : true);
-  
+
     setIsFormValid(isValid);
   }, [name, billingZip, billingCity, billingStreet, sameAsBilling, shippingZip, shippingCity, shippingStreet, cart, paymentMethod]);
-  // Rendelés elküldése
+
   const handleOrder = async () => {
     const token = localStorage.getItem("token");
 
     if (!token && !guestEmail.trim()) {
-      alert("Vendégként kérjük, adjon meg egy email címet!");
+      setErrorMessage("Vendégként kérjük, adjon meg egy email címet!");
+      setSuccessMessage("");
       return;
     }
 
@@ -72,15 +71,15 @@ const Cart = () => {
       user_id: user ? user.id : null,
       guest_email: user ? null : guestEmail.trim(),
       total,
-      billing: { 
-        zip: (billingZip || "").trim(), 
-        city: (billingCity || "").trim(), 
-        street: (billingStreet || "").trim() 
+      billing: {
+        zip: billingZip.trim(),
+        city: billingCity.trim(),
+        street: billingStreet.trim(),
       },
-      shipping: { 
-        zip: (shippingZip || "").trim(), 
-        city: (shippingCity || "").trim(), 
-        street: (shippingStreet || "").trim() 
+      shipping: {
+        zip: shippingZip.trim(),
+        city: shippingCity.trim(),
+        street: shippingStreet.trim(),
       },
       payment_method: paymentMethod,
       cart: cart.map((item) => ({
@@ -106,17 +105,23 @@ const Cart = () => {
         throw new Error("Rendelés sikertelen");
       }
 
-      alert("Megrendelés leadva!");
+      setSuccessMessage("Megrendelés sikeresen leadva!");
+      setErrorMessage("");
       clearCart();
     } catch (error) {
       console.error("Hiba történt:", error);
-      alert("Hiba történt a rendelés során.");
+      setErrorMessage("Hiba történt a rendelés során.");
+      setSuccessMessage("");
     }
   };
 
   return (
     <div className="cart-container">
       <h2 className="cart-header">Kosár</h2>
+
+      {successMessage && <p className="success-message">{successMessage}</p>}
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
+
       {cart.length === 0 ? (
         <p>A kosár üres.</p>
       ) : (
@@ -124,16 +129,23 @@ const Cart = () => {
           <ul className="cart-list">
             {cart.map((item) => (
               <li key={item.id} className="cart-item">
-                <span>{item.name} - {item.price.toLocaleString()} Ft × {item.quantity}</span>
+                <span>
+                  {item.name} - {item.price.toLocaleString()} Ft × {item.quantity}
+                </span>
                 <div className="cart-controls">
                   <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>-</button>
-                  <input type="number" value={item.quantity} onChange={(e) => updateQuantity(item.id, Math.max(1, Number(e.target.value)))}/>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateQuantity(item.id, Math.max(1, Number(e.target.value)))}
+                  />
                   <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                   <button className="remove-button" onClick={() => removeFromCart(item.id)}>🗑</button>
                 </div>
               </li>
             ))}
           </ul>
+
           <h3 className="cart-total">Összesen: {total.toLocaleString()} Ft</h3>
 
           <div className="form-section">
@@ -170,17 +182,19 @@ const Cart = () => {
               Készpénzes fizetés
             </label>
           </div>
+
           {!user && (
-          <div className="form-section">
-            <h2>Kapcsolattartó Email</h2>
-            <input
-              type="email"
-              value={guestEmail}
-              onChange={(e) => setGuestEmail(e.target.value)}
-              placeholder="Email cím"
-            />
-          </div>
-        )}
+            <div className="form-section">
+              <h2>Kapcsolattartó Email</h2>
+              <input
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder="Email cím"
+              />
+            </div>
+          )}
+
           <button className="order-button" onClick={handleOrder} disabled={!isFormValid}>
             Megrendelés
           </button>

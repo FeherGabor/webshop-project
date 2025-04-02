@@ -13,30 +13,38 @@ const Register = () => {
     city: "",
     street: "",
   });
-  const [error, setError] = useState(""); // Hibák megjelenítése
-  const [loading, setLoading] = useState(false); // Betöltési állapot
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    // Csak számokat engedünk beíráskor a telefonszám mezőbe
+    if (e.target.name === "phone") {
+      const value = e.target.value.replace(/[^0-9+]/g, ""); // csak szám és +
+      setForm({ ...form, [e.target.name]: value });
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
   };
 
-  // E-mail validálás
   const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   };
 
-  // Jelszó validálás
   const validatePassword = (password) => {
-    return password.length >= 6; // Legalább 6 karakter
+    return password.length >= 6;
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^(\+36|06)(20|30|70|1)\d{7}$/;
+    return phoneRegex.test(phone.replace(/\s+/g, ""));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Input validálás
-    if (!form.name || !form.email || !form.password || !form.postcode || !form.city || !form.street) {
+    if (!form.name || !form.email || !form.phone || !form.password || !form.postcode || !form.city || !form.street) {
       setError("Minden mezőt ki kell tölteni!");
       return;
     }
@@ -46,31 +54,45 @@ const Register = () => {
       return;
     }
 
+    if (!validatePhone(form.phone)) {
+      setError("Hibás telefonszám formátum! (pl. +36201234567 vagy 06201234567)");
+      return;
+    }
+
     if (!validatePassword(form.password)) {
       setError("A jelszónak legalább 6 karakter hosszúnak kell lennie!");
       return;
     }
 
-    setError(""); // Töröljük a hibát, ha minden rendben van
+    setError("");
 
     try {
-      setLoading(true); // Betöltési állapot bekapcsolása
+      setLoading(true);
       await axios.post("http://localhost:5000/register", form);
       alert("Sikeres regisztráció!");
       navigate("/login");
     } catch (error) {
-      console.error(error);
-      setError("Hiba történt a regisztráció során!"); // Hibaüzenet
+      console.error("Regisztrációs hiba:", error);
+
+      if (
+        error.response &&
+        error.response.status === 400 &&
+        error.response.data.message === "Ez az email már használatban van!"
+      ) {
+        setError("Ezzel az email címmel már regisztráltak!");
+      } else if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Hiba történt a regisztráció során!");
+      }
     } finally {
-      setLoading(false); // Betöltési állapot kikapcsolása
+      setLoading(false);
     }
   };
 
   return (
     <div className="register-container">
       <h2>Regisztráció</h2>
-
-      {/* Hibaüzenet megjelenítése */}
       {error && <p className="error-message">{error}</p>}
 
       <form onSubmit={handleSubmit} className="register-form">
@@ -93,9 +115,9 @@ const Register = () => {
           className="register-input"
         />
         <input
-          type="text"
+          type="tel"
           name="phone"
-          placeholder="Telefonszám"
+          placeholder="Telefonszám (pl. +36201234567 vagy 06201234567)"
           value={form.phone}
           onChange={handleChange}
           required
