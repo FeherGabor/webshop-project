@@ -59,28 +59,20 @@ const Cart = () => {
   }, [name, billingZip, billingCity, billingStreet, sameAsBilling, shippingZip, shippingCity, shippingStreet, cart, paymentMethod]);
 
   const handleOrder = async () => {
-    const token = localStorage.getItem("token");
-
+    const token = user?.token;
+  
     if (!token && !guestEmail.trim()) {
       setErrorMessage("Vendégként kérjük, adjon meg egy email címet!");
       setSuccessMessage("");
       return;
     }
-
+  
     const orderData = {
       user_id: user ? user.id : null,
       guest_email: user ? null : guestEmail.trim(),
       total,
-      billing: {
-        zip: billingZip.trim(),
-        city: billingCity.trim(),
-        street: billingStreet.trim(),
-      },
-      shipping: {
-        zip: shippingZip.trim(),
-        city: shippingCity.trim(),
-        street: shippingStreet.trim(),
-      },
+      billing: { zip: billingZip, city: billingCity, street: billingStreet },
+      shipping: { zip: shippingZip, city: shippingCity, street: shippingStreet },
       payment_method: paymentMethod,
       cart: cart.map((item) => ({
         product_id: item.id,
@@ -90,7 +82,7 @@ const Cart = () => {
         subtotal: item.price * item.quantity,
       })),
     };
-
+  
     try {
       const response = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
@@ -100,17 +92,19 @@ const Cart = () => {
         },
         body: JSON.stringify(orderData),
       });
-
+  
+      const data = await response.json();
+  
       if (!response.ok) {
-        throw new Error("Rendelés sikertelen");
+        throw new Error(data.message || "Rendelés sikertelen");
       }
-
+  
       setSuccessMessage("Megrendelés sikeresen leadva!");
       setErrorMessage("");
       clearCart();
     } catch (error) {
       console.error("Hiba történt:", error);
-      setErrorMessage("Hiba történt a rendelés során.");
+      setErrorMessage(error.message || "Hiba történt a rendelés során.");
       setSuccessMessage("");
     }
   };

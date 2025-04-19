@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import "../styles/Account.css";
+import AuthContext from "../context/AuthContext";
 
 const Account = () => {
+  const { user } = useContext(AuthContext);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -11,12 +14,13 @@ const Account = () => {
     city: "",
     street: "",
   });
+
   const [passwords, setPasswords] = useState({ oldPassword: "", newPassword: "" });
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const email = localStorage.getItem("email");
-    const token = localStorage.getItem("token");
+    const token = user?.token;
+    const email = user?.email;
 
     if (!token || !email) {
       setMessage("Be kell jelentkezni!");
@@ -24,7 +28,7 @@ const Account = () => {
     }
 
     fetchUserData(token);
-  }, []);
+  }, [user]);
 
   const fetchUserData = async (token) => {
     try {
@@ -67,7 +71,7 @@ const Account = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = user?.token;
     if (!token) {
       setMessage("Be kell jelentkezni!");
       return;
@@ -84,19 +88,6 @@ const Account = () => {
       });
 
       setMessage(response.data.message);
-
-      localStorage.setItem("email", form.email);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: form.email,
-          name: form.name,
-          phone: form.phone,
-          postcode: form.postcode,
-          city: form.city,
-          street: form.street,
-        })
-      );
     } catch (error) {
       console.error("Hiba történt a frissítés során!", error);
       setMessage("Hiba történt a frissítés során!");
@@ -105,7 +96,7 @@ const Account = () => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = user?.token;
     if (!token) {
       setMessage("Be kell jelentkezni!");
       return;

@@ -55,6 +55,23 @@ const optionalAuth = (req, res, next) => {
   });
 };
 
+// Admin middleware
+function adminOnly(req, res, next) {
+  if (req.user && req.user.is_admin === 1) {
+    next();
+  } else {
+    res.status(403).json({ message: "Admin jogosultság szükséges." });
+  }
+}
+
+// Admin termékek lekérdezése
+app.get('/api/admin/products', authenticateToken, adminOnly, (req, res) => {
+  db.query("SELECT * FROM products", (err, results) => {
+    if (err) return res.status(500).json({ error: "Adatbázis hiba!" });
+    res.json(results);
+  });
+});
+
 // Regisztráció
 app.post("/register", async (req, res) => {
   const { name, email, phone, password, postcode, city, street } = req.body;
@@ -101,8 +118,18 @@ app.post("/login", (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) return res.status(401).json({ message: "Hibás email vagy jelszó!" });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone } });
+    const token = jwt.sign({ id: user.id, email: user.email, is_admin: user.is_admin }, JWT_SECRET, { expiresIn: "1h" });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        is_admin: user.is_admin
+      }
+    });
   });
 });
 
@@ -198,10 +225,31 @@ app.post("/api/orders", optionalAuth, (req, res) => {
           (err) => {
             if (err) return db.rollback(() => res.status(500).json({ error: "Hiba a rendelési tételek mentésekor." }));
 
-            db.commit((err) => {
-              if (err) return db.rollback(() => res.status(500).json({ error: "Hiba a rendelés véglegesítésekor." }));
-              res.status(200).json({ message: "Rendelés sikeresen mentve!", orderId });
-            });
+            const updateStockQueries = cart.map((item) =>
+              new Promise((resolve, reject) => {
+                db.query(
+                  "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                  [item.quantity, item.product_id, item.quantity],
+                  (err, result) => {
+                    if (err) return reject("Adatbázis hiba a készletfrissítésnél!");
+                    if (result.affectedRows === 0)
+                      return reject(`Nincs elegendő készlet ebből a termékből: ${item.product_name}`);
+                    resolve();
+                  }
+                );
+              })
+            );
+
+            Promise.all(updateStockQueries)
+              .then(() => {
+                db.commit((err) => {
+                  if (err) return db.rollback(() => res.status(500).json({ error: "Hiba a rendelés véglegesítésekor." }));
+                  res.status(200).json({ message: "Rendelés sikeresen mentve!", orderId });
+                });
+              })
+              .catch((error) => {
+                db.rollback(() => res.status(400).json({ message: error || "Hiba a készlet frissítés során!" }));
+              });
           }
         );
       }
@@ -238,6 +286,101 @@ app.get("/api/orders", authenticateToken, (req, res) => {
 app.get("/", (req, res) => {
   res.send("A szerver fut és működik!");
 });
+const fs = require("fs");
 
+// Admin képek listázása a public/images mappából
+app.get("/api/admin/images", authenticateToken, adminOnly, (req, res) => {
+  const imagesDir = path.join(__dirname, "public", "images");
+
+  fs.readdir(imagesDir, (err, files) => {
+    if (err) {
+      console.error("Képek olvasási hiba:", err);
+      return res.status(500).json({ message: "Nem sikerült a képek betöltése." });
+    }
+
+    // Csak kép kiterjesztésű fájlok szűrése (opcionális, de ajánlott)
+    const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+    res.json(imageFiles);
+  });
+});
+// Admin új termék hozzáadása
+app.post("/api/admin/products", authenticateToken, adminOnly, (req, res) => {
+  const { name, price, description, image, stock, category } = req.body;
+
+  if (!name || !price || !description || !image || stock === undefined || !category) {
+    return res.status(400).json({ message: "Minden mezőt ki kell tölteni!" });
+  }
+
+  db.query(
+    "INSERT INTO products (name, price, description, image, stock, category) VALUES (?, ?, ?, ?, ?, ?)",
+    [name, price, description, image, stock, category],
+    (err, result) => {
+      if (err) {
+        console.error("Adatbázis hiba:", err);
+        return res.status(500).json({ message: "Hiba a termék mentésekor." });
+      }
+      res.status(201).json({ message: "Termék sikeresen hozzáadva!", id: result.insertId });
+    }
+  );
+});//admin modositas
+app.put("/api/admin/products/:id", authenticateToken, adminOnly, (req, res) => {
+  const { id } = req.params;
+  const { name, price, description, image, stock, category } = req.body;
+
+  if (!name || !price || !description || !image || stock === undefined || !category) {
+    return res.status(400).json({ message: "Minden mezőt ki kell tölteni!" });
+  }
+
+  db.query(
+    "UPDATE products SET name = ?, price = ?, description = ?, image = ?, stock = ?, category = ? WHERE id = ?",
+    [name, price, description, image, stock, category, id],
+    (err, result) => {
+      if (err) {
+        console.error("Hiba a termék módosításakor:", err);
+        return res.status(500).json({ message: "Hiba történt a termék frissítésekor." });
+      }
+      res.json({ message: "Termék sikeresen frissítve!" });
+    }
+  );
+});
+//admin torles
+app.delete("/api/admin/products/:id", authenticateToken, adminOnly, (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM products WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      console.error("Hiba a törlés során:", err);
+      return res.status(500).json({ message: "Hiba történt a termék törlésekor." });
+    }
+
+    res.json({ message: "Termék törölve!" });
+  });
+});
+//admin user lekeres
+app.get("/api/admin/users", authenticateToken, adminOnly, (req, res) => {
+  db.query("SELECT id, name, email, phone, postcode, city, street, is_admin FROM users", (err, results) => {
+    if (err) return res.status(500).json({ message: "Hiba a felhasználók lekérésekor." });
+    res.json(results);
+  });
+});
+//admin user torles
+app.delete("/api/admin/users/:id", authenticateToken, adminOnly, (req, res) => {
+  const userId = req.params.id;
+
+  db.query("DELETE FROM users WHERE id = ?", [userId], (err) => {
+    if (err) return res.status(500).json({ message: "Hiba a felhasználó törlésekor." });
+    res.json({ message: "Felhasználó törölve." });
+  });
+});
+//admin statusz modositas
+app.put("/api/admin/users/:id/admin", authenticateToken, adminOnly, (req, res) => {
+  const userId = req.params.id;
+  const { is_admin } = req.body;
+
+  db.query("UPDATE users SET is_admin = ? WHERE id = ?", [is_admin ? 1 : 0, userId], (err) => {
+    if (err) return res.status(500).json({ message: "Hiba az admin státusz frissítésekor." });
+    res.json({ message: "Admin jogosultság módosítva." });
+  });
+});
 // Szerver indítása
 app.listen(5000, () => console.log("Szerver fut az 5000-es porton"));

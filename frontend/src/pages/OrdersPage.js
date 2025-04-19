@@ -4,13 +4,13 @@ import { useNavigate } from "react-router-dom";
 import "../styles/OrdersPage.css";
 
 const OrdersPage = () => {
-  const { user, authToken } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) {
-      navigate("/login"); // Ha nincs bejelentkezve, irányítsuk át
+      navigate("/login");
       return;
     }
 
@@ -20,14 +20,14 @@ const OrdersPage = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${user.token}`,
           },
         });
-    
+
         if (!response.ok) {
           throw new Error(`Hiba: ${response.status}`);
         }
-    
+
         const data = await response.json();
         setOrders(data);
       } catch (error) {
@@ -36,7 +36,7 @@ const OrdersPage = () => {
     };
 
     fetchOrders();
-  }, [user, authToken, navigate]);
+  }, [user, navigate]);
 
   return (
     <div className="orders-page">
@@ -46,29 +46,27 @@ const OrdersPage = () => {
       ) : (
         <ul className="orders-list">
           {orders.map((order) => (
-            console.log("Order (frontend oldalon):", order),           
-          <li key={order._id} className="order-item">
-            <p><strong>Rendelés ID:</strong> {order.id}</p>
-            <p><strong>Dátum:</strong> {new Date(order.created_at).toLocaleDateString()}</p>
-            <p><strong>Összeg:</strong> {order.total} Ft</p>
-            <p><strong>Fizetés módja:</strong> {
-              order.payment_method === "card"
-                ? "Kártyás fizetés"
-                : order.payment_method === "cash"
-                ? "Készpénzes fizetés"
-                : "Nincs adat"
-            }</p>
-            <p><strong>Termékek:</strong></p>
-            <ul>
-              {order.items.map((item) => (
-                <li key={item._id}>
-                  <strong>{item.product_name}</strong> - {item.quantity} db ({item.price} Ft/db)
-                </li>
-              ))}
-            </ul>
-            
-          </li>
-        ))}
+            <li key={order.id} className="order-item">
+              <p><strong>Rendelés ID:</strong> {order.id}</p>
+              <p><strong>Dátum:</strong> {new Date(order.created_at).toLocaleDateString()}</p>
+              <p><strong>Összeg:</strong> {order.total} Ft</p>
+              <p><strong>Fizetés módja:</strong> {
+                order.payment_method === "card"
+                  ? "Kártyás fizetés"
+                  : order.payment_method === "cash"
+                  ? "Készpénzes fizetés"
+                  : "Nincs adat"
+              }</p>
+              <p><strong>Termékek:</strong></p>
+              <ul>
+                {order.items.map((item) => (
+                  <li key={item.product_id}>
+                    <strong>{item.product_name}</strong> – {item.quantity} db ({item.price} Ft/db)
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
         </ul>
       )}
     </div>

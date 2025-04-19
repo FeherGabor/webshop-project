@@ -20,27 +20,21 @@ const Login = () => {
       const response = await axios.post("http://localhost:5000/login", form);
       console.log("Szerver válasza:", response.data);
   
-      if (response.data.token) {
-        // Ha van token, akkor bejelentkezés sikeres
-        localStorage.setItem("token", response.data.token); // token mentése
-        localStorage.setItem("email", form.email); // email mentése
+      const { token, user } = response.data;
   
-        login({
-          token: response.data.token,
-          email: form.email,
-        });
-  
+      if (token && user) {
+        login({ token, user });
         alert("Sikeres bejelentkezés!");
-        navigate("/"); // Navigálás a főoldalra
+        navigate("/");
       } else {
-        setError("Hibás email vagy jelszó!"); // Hibaüzenet a bejelentkezési problémákra
+        setError("Hibás email vagy jelszó!");
       }
     } catch (error) {
       console.error("Bejelentkezési hiba:", error.response?.data?.message || error);
-      setError(error.response?.data?.message || "Bejelentkezési hiba történt!"); // Hiba kezelése
+      setError(error.response?.data?.message || "Bejelentkezési hiba történt!");
     }
   };
-  
+
   return (
     <div className="login-container">
       <h2>Bejelentkezés</h2>

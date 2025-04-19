@@ -18,9 +18,8 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    // Csak számokat engedünk beíráskor a telefonszám mezőbe
     if (e.target.name === "phone") {
-      const value = e.target.value.replace(/[^0-9+]/g, ""); // csak szám és +
+      const value = e.target.value.replace(/[^0-9+]/g, "");
       setForm({ ...form, [e.target.name]: value });
     } else {
       setForm({ ...form, [e.target.name]: e.target.value });
@@ -70,6 +69,17 @@ const Register = () => {
       setLoading(true);
       await axios.post("http://localhost:5000/register", form);
       alert("Sikeres regisztráció!");
+
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        postcode: "",
+        city: "",
+        street: "",
+      });
+
       navigate("/login");
     } catch (error) {
       console.error("Regisztrációs hiba:", error);

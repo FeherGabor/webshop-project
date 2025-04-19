@@ -14,14 +14,20 @@ export const AuthProvider = ({ children }) => {
   });
 
   const login = (userData) => {
-    // Ellenőrizzük, hogy van-e token és adat
-    if (!userData || !userData.token) {
-      console.error("Hiányzó token a login válaszból!");
+    if (!userData || !userData.token || !userData.user) {
+      console.error("Hiányzó token vagy user adat a login válaszból!");
       return;
     }
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData)); // User adatokat mentjük a localStorage-ba
+  
+    const fullUser = {
+      ...userData.user,
+      token: userData.token,
+    };
+  
+    setUser(fullUser);
+    localStorage.setItem("user", JSON.stringify(fullUser));
   };
+  
 
   const logout = () => {
     setUser(null);

@@ -50,14 +50,15 @@ const Header = () => {
       </div>
       <nav className="header-links">
         {user ? (
-          <div className="account-menu" ref={menuRef}>
+          <div className="account-menu" ref={menuRef}>         
             <button onClick={toggleMenu} className="button">Fiók</button>
             {menuOpen && (
-              <div className="dropdown-menu">
+              <div className="dropdown-menu">  
+              {user && Number(user.is_admin) === 1 && (
+                <Link to="/admin" className="button">Admin felület</Link>
+              )}   
                 <Link to="/account" className="dropdown-item">Adataim módosítása</Link>
-                {user && (
-                  <Link to="/orders" className="dropdown-item">Korábbi rendelések</Link>
-                )}
+                <Link to="/orders" className="dropdown-item">Korábbi rendelések</Link>
                 <button onClick={handleLogout} className="dropdown-item">Kijelentkezés</button>
               </div>
             )}
