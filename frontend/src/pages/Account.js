@@ -32,7 +32,7 @@ const Account = () => {
 
   const fetchUserData = async (token) => {
     try {
-      const response = await axios.get("http://localhost:5000/users", {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -83,7 +83,7 @@ const Account = () => {
     }
 
     try {
-      const response = await axios.put("http://localhost:5000/users", form, {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL}/users`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -108,7 +108,7 @@ const Account = () => {
     }
 
     try {
-      const res = await axios.put("http://localhost:5000/users/password", passwords, {
+      const res = await axios.put(`${process.env.REACT_APP_API_URL}/users/password`, passwords, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage(res.data.message);

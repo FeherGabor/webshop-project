@@ -60,13 +60,13 @@ const Cart = () => {
 
   const handleOrder = async () => {
     const token = user?.token;
-  
+
     if (!token && !guestEmail.trim()) {
       setErrorMessage("Vendégként kérjük, adjon meg egy email címet!");
       setSuccessMessage("");
       return;
     }
-  
+
     const orderData = {
       user_id: user ? user.id : null,
       guest_email: user ? null : guestEmail.trim(),
@@ -82,9 +82,9 @@ const Cart = () => {
         subtotal: item.price * item.quantity,
       })),
     };
-  
+
     try {
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,13 +92,13 @@ const Cart = () => {
         },
         body: JSON.stringify(orderData),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.message || "Rendelés sikertelen");
       }
-  
+
       setSuccessMessage("Megrendelés sikeresen leadva!");
       setErrorMessage("");
       clearCart();

@@ -16,7 +16,7 @@ const ProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/products");
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/products`);
         setProducts(response.data);
         setFilteredProducts(response.data);
 
@@ -77,7 +77,7 @@ const ProductList = () => {
           {filteredProducts.map((product) => (
             <div key={product.id} className="product-item">
               <img
-                src={`http://localhost:5000/images/${product.image}`}
+                src={`${process.env.REACT_APP_API_URL}/images/${product.image}`}
                 alt={product.name}
                 style={{ width: "200px", height: "200px" }}
               />

@@ -7,7 +7,7 @@ import AuthContext from "../context/AuthContext";
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const { login } = useContext(AuthContext);
-  const [error, setError] = useState("");  // Az error állapot a hibaüzenethez
+  const [error, setError] = useState(""); 
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -17,7 +17,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/login", form);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, form);
       console.log("Szerver válasza:", response.data);
   
       const { token, user } = response.data;
@@ -38,7 +38,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <h2>Bejelentkezés</h2>
-      {error && <p className="error-message">{error}</p>}  {/* Hibaüzenet megjelenítése */}
+      {error && <p className="error-message">{error}</p>}
       <form onSubmit={handleSubmit} className="login-form">
         <input
           type="email"
@@ -60,7 +60,10 @@ const Login = () => {
         />
         <button type="submit" className="login-button">Bejelentkezés</button>
       </form>
-      <p>Még nincs fiókod? <Link to="/register" className="login-link">Regisztrálj itt</Link></p>
+      <p>
+        Még nincs fiókod?{" "}
+        <Link to="/register" className="login-link">Regisztrálj itt</Link>
+      </p>
     </div>
   );
 };

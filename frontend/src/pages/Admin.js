@@ -21,7 +21,7 @@ const Admin = () => {
 
   const fetchProducts = useCallback(() => {
     axios
-      .get("http://localhost:5000/api/admin/products", {
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/products`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => setProducts(res.data))
@@ -30,7 +30,7 @@ const Admin = () => {
 
   const fetchImages = useCallback(() => {
     axios
-      .get("http://localhost:5000/api/admin/images", {
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/images`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => setAvailableImages(res.data))
@@ -39,7 +39,7 @@ const Admin = () => {
 
   const fetchUsers = useCallback(() => {
     axios
-      .get("http://localhost:5000/api/admin/users", {
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => setUsers(res.data))
@@ -63,7 +63,7 @@ const Admin = () => {
     try {
       if (editId) {
         await axios.put(
-          `http://localhost:5000/api/admin/products/${editId}`,
+          `${process.env.REACT_APP_API_URL}/api/admin/products/${editId}`,
           {
             name: newName,
             price: parseFloat(newPrice),
@@ -79,7 +79,7 @@ const Admin = () => {
         setMessage("Termék módosítva!");
       } else {
         await axios.post(
-          "http://localhost:5000/api/admin/products",
+          `${process.env.REACT_APP_API_URL}/api/admin/products`,
           {
             name: newName,
             price: parseFloat(newPrice),
@@ -124,7 +124,7 @@ const Admin = () => {
     if (!window.confirm("Biztosan törlöd ezt a terméket?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/admin/products/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/admin/products/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       setMessage("Termék törölve.");
@@ -138,7 +138,7 @@ const Admin = () => {
   const handleToggleAdmin = async (id, currentStatus) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/admin/users/${id}/admin`,
+        `${process.env.REACT_APP_API_URL}/api/admin/users/${id}/admin`,
         { is_admin: currentStatus ? 0 : 1 },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
@@ -152,7 +152,7 @@ const Admin = () => {
     if (!window.confirm("Biztosan törölni szeretnéd ezt a felhasználót?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       fetchUsers();
@@ -206,7 +206,7 @@ const Admin = () => {
               <div className="preview-image">
                 <p>Kiválasztott kép:</p>
                 <img
-                  src={`http://localhost:5000/images/${newImage}`}
+                  src={`${process.env.REACT_APP_API_URL}/images/${newImage}`}
                   alt="Előnézet"
                   width="150"
                 />
@@ -223,7 +223,7 @@ const Admin = () => {
                 <strong>{p.name}</strong> - {p.price.toLocaleString()} Ft<br />
                 <small>{p.description}</small><br />
                 <strong>Készlet:</strong> {p.stock} db, <strong>Kategória:</strong> {p.category}<br />
-                <img src={`http://localhost:5000/images/${p.image}`} alt={p.name} width="100" /><br />
+                <img src={`${process.env.REACT_APP_API_URL}/images/${p.image}`} alt={p.name} width="100" /><br />
                 <button onClick={() => handleEdit(p)}>✏️ Szerkesztés</button>
                 <button onClick={() => handleDelete(p.id)}>🗑️ Törlés</button>
               </li>
